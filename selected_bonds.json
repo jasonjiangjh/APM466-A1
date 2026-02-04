@@ -1,0 +1,92 @@
+[
+  {
+    "ISIN": "CA135087R978",
+    "Name": "CANADA 24/26",
+    "Coupon": 4.0,
+    "Issue_Date": "5/6/2024",
+    "Maturity_Date": "8/3/2026",
+    "Years_to_Maturity": 0.5749486652977412,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202426-Bond-2026-ca135087r978"
+  },
+  {
+    "ISIN": "CA135087S547",
+    "Name": "CANADA 24/27",
+    "Coupon": 3.0,
+    "Issue_Date": "11/1/2024",
+    "Maturity_Date": "2/1/2027",
+    "Years_to_Maturity": 1.0732375085557837,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202427-Bond-2027-ca135087s547"
+  },
+  {
+    "ISIN": "CA135087T461",
+    "Name": "CANADA 25/27",
+    "Coupon": 2.5,
+    "Issue_Date": "5/15/2025",
+    "Maturity_Date": "8/1/2027",
+    "Years_to_Maturity": 1.568788501026694,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202527-Bond-2027-ca135087t461"
+  },
+  {
+    "ISIN": "CA135087T958",
+    "Name": "CANADA 25/28",
+    "Coupon": 2.25,
+    "Issue_Date": "11/14/2025",
+    "Maturity_Date": "2/1/2028",
+    "Years_to_Maturity": 2.0725530458590007,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202528-Bond-2028-ca135087t958"
+  },
+  {
+    "ISIN": "CA135087H235",
+    "Name": "CDA 2028",
+    "Coupon": 2.0,
+    "Issue_Date": "8/1/2017",
+    "Maturity_Date": "6/1/2028",
+    "Years_to_Maturity": 2.403832991101985,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_201728-Bond-2028-ca135087h235"
+  },
+  {
+    "ISIN": "CA135087Q988",
+    "Name": "CANADA 23/29",
+    "Coupon": 4.0,
+    "Issue_Date": "10/13/2023",
+    "Maturity_Date": "3/1/2029",
+    "Years_to_Maturity": 3.1512662559890487,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202329-Bond-2029-ca135087q988"
+  },
+  {
+    "ISIN": "CA135087WL43",
+    "Name": "CDA 2029 01.06",
+    "Coupon": 5.75,
+    "Issue_Date": "2/2/1998",
+    "Maturity_Date": "6/1/2029",
+    "Years_to_Maturity": 3.403148528405202,
+    "URL": "https://markets.businessinsider.com/bonds/5_750-canada-government-of-Bond-2029-ca135087wl43"
+  },
+  {
+    "ISIN": "CA135087N670",
+    "Name": "CANADA 22/29",
+    "Coupon": 2.25,
+    "Issue_Date": "3/29/2022",
+    "Maturity_Date": "12/1/2029",
+    "Years_to_Maturity": 3.9041752224503763,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202229-Bond-2029-ca135087n670"
+  },
+  {
+    "ISIN": "CA135087T388",
+    "Name": "CANADA 25/30",
+    "Coupon": 2.75,
+    "Issue_Date": "4/10/2025",
+    "Maturity_Date": "9/1/2030",
+    "Years_to_Maturity": 4.654346338124572,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202530-Bond-2030-ca135087t388"
+  },
+  {
+    "ISIN": "CA135087L443",
+    "Name": "CANADA 20/30",
+    "Coupon": 0.5,
+    "Issue_Date": "10/5/2020",
+    "Maturity_Date": "12/1/2030",
+    "Years_to_Maturity": 4.903490759753593,
+    "URL": "https://markets.businessinsider.com/bonds/canadacd-bonds_202030_series_l443-Bond-2030-ca135087l443"
+  }
+]

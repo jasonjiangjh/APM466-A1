@@ -1,0 +1,236 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, total={6.4in, 8.53in}]{geometry}
+\usepackage{amsmath, amsfonts, amssymb, amsthm, hyperref, enumerate, graphicx, xcolor, lmodern, url}
+% Note: Some packages from the template (tikz, bbm, mathrsfs, centernot) may not be available in Basic TeX Live
+% Uncomment if needed: \usepackage{tikz, bbm, mathrsfs, centernot}
+
+\title{MAT1856/APM466 Assignment 1}
+\author{Junhang Jiang, Student \#: 1011712924}
+\date{February, 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Fundamental Questions - 25 points}
+
+\begin{enumerate}
+    \item \hfill
+    \begin{enumerate}
+        \item \textbf{(1 point) Why do governments issue bonds and not simply print more money?}
+        
+        Governments issue bonds rather than printing more money because unlimited money printing causes severe inflation and economic instability, while bonds allow governments to borrow at market rates without devaluing the currency.
+        
+        \item \textbf{(2 points) Give a hypothetical example of why the long-term part of a yield curve might flatten.}
+        
+        If markets expect future inflation to decline from 3\% to 2\% over the next decade, investors would increase demand for long-term bonds, causing 30-year bond yields to fall while 2-year yields remain stable, thereby flattening the long-term portion of the yield curve.
+        
+        \item \textbf{(2 points) Explain what quantitative easing is and how the (US) Fed has employed this since the beginning of the COVID-19 pandemic.}
+        
+        Quantitative easing (QE) is a monetary policy where central banks purchase government bonds and other assets to increase money supply and lower interest rates; since COVID-19 began, the U.S. Fed employed QE by announcing unlimited purchases of Treasury and mortgage-backed securities in March 2020, expanding its balance sheet from \$4 trillion to nearly \$9 trillion by 2022 to combat the economic recession.
+    \end{enumerate}
+    
+    \item \textbf{(10 points) Bond Selection for Yield Curve Construction}
+    
+    To construct a 0-5 year yield curve and spot curve, I selected 10 Canadian Government bonds evenly distributed across 0-5 years (0.57, 1.07, 1.57, 2.07, 2.40, 3.15, 3.40, 3.90, 4.65, 4.90 years). All bonds have semi-annual coupon payments and complete data for the analysis period. Bond data and historical prices were collected from Business Insider Markets \cite{businessinsider2026}. The complete bond list is provided in Table~\ref{tab:selected_bonds} in the References section.
+    
+    \item \textbf{(10 points) Principal Component Analysis}
+    
+    The eigenvalues represent the variance explained by each principal component, with the largest eigenvalue corresponding to the direction of maximum variance. The eigenvectors indicate the direction and magnitude of movement for each point along the curve. Typically, the first eigenvector shows parallel shifts, the second shows steepening/flattening, and the third shows curvature changes.
+    
+\end{enumerate}
+
+
+
+\section*{Empirical Questions - 75 points} 
+
+\begin{enumerate}
+\setcounter{enumi}{3} 
+    \item \hfill
+    \begin{enumerate}
+        \item \textbf{(10 points) Yield to Maturity (YTM) Calculation and Yield Curve}
+        
+        I calculated YTM for each bond using numerical methods (Newton-Raphson) to solve for the discount rate equating present value of cash flows to market price. All bonds use semi-annual compounding. Linear interpolation was used between discrete maturity points to create smooth curves.
+        
+        \begin{center}
+        \includegraphics[width=0.45\textwidth]{yield_curves.png}
+        \end{center}
+        
+    \item \textbf{(15 points) Spot Curve Derivation - Pseudo-code}
+    
+    \textbf{Algorithm:} The bootstrapping method is used to derive spot rates from coupon-bearing bonds \cite{luenberger1998}. (1) Sort bonds by maturity. (2) For the first bond, solve $P = \frac{C+F}{(1+r_1/2)^{2n}}$ for spot rate $r_1$. (3) For subsequent bonds, use known spot rates for earlier periods and solve for the unknown spot rate at maturity $t$:
+        \begin{equation}
+        P = \sum_{i=1}^{n-1}\frac{C}{(1+r_{t_i}/2)^{2t_i}} + \frac{C+F}{(1+r_t/2)^{2t}}
+        \end{equation}
+        where $r_{t_i}$ are known spot rates for $t_i < t$. (4) Use numerical methods to solve for $r_t$.
+        
+        \begin{center}
+        \includegraphics[width=0.45\textwidth]{spot_curves.png}
+        \end{center}
+        
+        \item \textbf{(15 points) Forward Curve Derivation - Pseudo-code}
+        
+        \textbf{Algorithm:} For semi-annual compounding, the 1-year forward rate from time $t$ to $t+n$ is:
+        \begin{equation}
+        F_{t,t+n} = 2 \times \left[\left(\frac{(1+S_{t+n}/2)^{2(t+n)}}{(1+S_t/2)^{2t}}\right)^{1/(2n)} - 1\right]
+        \end{equation}
+        where $S_t$ and $S_{t+n}$ are spot rates. Calculate $F_{1,2}$, $F_{1,3}$, $F_{1,4}$, and $F_{1,5}$ using spot rates $S_1$ through $S_5$.
+        
+        \begin{center}
+        \includegraphics[width=0.45\textwidth]{forward_curves.png}
+        \end{center}
+        
+    \end{enumerate}
+    
+    \item \textbf{(20 points) Covariance Matrices for Daily Log-Returns}
+    
+    I calculated covariance matrices for daily log-returns: $X_{i,j} = \log(r_{i,j+1}/r_{i,j})$ where $r_{i,j}$ is the rate for maturity $i$ on day $j$. Results: $10 \times 10$ matrix for YTM rates, $4 \times 4$ matrix for forward rates (1yr-1yr through 1yr-4yr). Key elements shown in Tables~\ref{tab:ytm_cov} and~\ref{tab:forward_cov} in the References section.
+    
+    \item \textbf{(15 points) Eigenvalues and Eigenvectors}
+    
+    Principal component analysis (PCA) is applied to the covariance matrices of log-returns to identify the main factors driving yield and forward rate movements \cite{litterman1991}. \textbf{Yield Rates:} First eigenvalue = 0.000165 (52.0\% variance). First three eigenvalues account for 88.5\% of variance. First eigenvector shows all positive values, with largest components at 1.57yr (0.456), 4.65yr (0.451), and 1.07yr (0.306), indicating a parallel shift with some curvature. The eigenvalue and eigenvector plots are shown in Figures~\ref{fig:ytm_eigenvalues} and~\ref{fig:ytm_eigenvectors}.
+    
+    \textbf{Forward Rates:} First eigenvalue = 0.000147 (55.0\% variance). First eigenvector: [0.969, -0.154, 0.027, -0.191], dominated by the 1yr-1yr rate (0.969), indicating parallel shift driven primarily by the short-term forward rate. The eigenvalue and eigenvector plots are shown in Figures~\ref{fig:forward_eigenvalues} and~\ref{fig:forward_eigenvectors}.
+    
+    Summary in Tables~\ref{tab:eigenvalues} and~\ref{tab:eigenvectors} in the References section.
+    
+\end{enumerate}
+
+\section*{References and GitHub Link to Code}
+
+\setcounter{table}{0}
+
+\begin{table}[h]
+\centering
+\caption{Selected Bonds for Yield Curve Construction}
+\label{tab:selected_bonds}
+\small
+\begin{tabular}{clccc}
+Label & Bond & ISIN & Maturity (yr) & Coupon (\%) \\
+\hline
+(a) & CAN 4.0 Aug 26 & CA135087R978 & 0.57 & 4.000 \\
+(b) & CAN 3.0 Feb 27 & CA135087S547 & 1.07 & 3.000 \\
+(c) & CAN 2.5 Aug 27 & CA135087T461 & 1.57 & 2.500 \\
+(d) & CAN 2.25 Feb 28 & CA135087T958 & 2.07 & 2.250 \\
+(e) & CAN 2.0 Jun 28 & CA135087H235 & 2.40 & 2.000 \\
+(f) & CAN 4.0 Mar 29 & CA135087Q988 & 3.15 & 4.000 \\
+(g) & CAN 5.75 Jun 29 & CA135087WL43 & 3.40 & 5.750 \\
+(h) & CAN 2.25 Dec 29 & CA135087N670 & 3.90 & 2.250 \\
+(i) & CAN 2.75 Sep 30 & CA135087T388 & 4.65 & 2.750 \\
+(j) & CAN 0.5 Dec 30 & CA135087L443 & 4.90 & 0.500 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Selected Elements of YTM Covariance Matrix (10$\times$10)}
+\label{tab:ytm_cov}
+\small
+\begin{tabular}{l|cccc}
+Maturity & 0.57yr & 1.07yr & 1.57yr & 4.90yr \\
+\hline
+0.57yr & 0.0000093 & 0.0000025 & -0.0000012 & 0.0000035 \\
+1.07yr & 0.0000025 & 0.0000206 & 0.0000203 & 0.0000213 \\
+1.57yr & -0.0000012 & 0.0000203 & 0.0000475 & 0.0000169 \\
+4.90yr & 0.0000035 & 0.0000213 & 0.0000169 & 0.0000358 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Forward Rates Covariance Matrix (4$\times$4)}
+\label{tab:forward_cov}
+\small
+\begin{tabular}{l|cccc}
+& 1yr-1yr & 1yr-2yr & 1yr-3yr & 1yr-4yr \\
+\hline
+1yr-1yr & 0.000142 & -0.000013 & 0.000014 & -0.000014 \\
+1yr-2yr & -0.000013 & 0.000029 & 0.000020 & 0.000032 \\
+1yr-3yr & 0.000014 & 0.000020 & 0.000039 & 0.000039 \\
+1yr-4yr & -0.000014 & 0.000032 & 0.000039 & 0.000055 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Eigenvalues Summary}
+\label{tab:eigenvalues}
+\small
+\begin{tabular}{l|cc}
+& YTM & Forward Rates \\
+\hline
+$\lambda_1$ (First) & 0.000165 (52.0\%) & 0.000147 (55.0\%) \\
+$\lambda_2$ (Second) & 0.000091 (28.7\%) & 0.000104 (38.9\%) \\
+$\lambda_3$ (Third) & 0.000018 (5.5\%) & 0.000010 (3.9\%) \\
+\hline
+Cumulative (Top 3) & 86.2\% & 97.8\% \\
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{First Eigenvector Components}
+\label{tab:eigenvectors}
+\small
+\begin{tabular}{l|cc}
+Maturity/Term & YTM PC1 & Forward Rates PC1 \\
+\hline
+0.57yr / 1yr-1yr & 0.044 & 0.969 \\
+1.07yr / 1yr-2yr & 0.306 & -0.154 \\
+1.57yr / 1yr-3yr & 0.456 & 0.027 \\
+2.07yr & 0.219 & -0.191 \\
+2.40yr & 0.207 & -- \\
+3.15yr & 0.184 & -- \\
+3.40yr & 0.338 & -- \\
+3.90yr & 0.344 & -- \\
+4.65yr & 0.451 & -- \\
+4.90yr & 0.370 & -- \\
+\end{tabular}
+\end{table}
+
+\begin{thebibliography}{99}
+
+\bibitem{businessinsider2026}
+Business Insider. (2026). \textit{Bond finder: Canadian government bonds}. Markets Insider. 
+Retrieved from \url{https://markets.businessinsider.com/bonds/}
+
+\bibitem{luenberger1998}
+Luenberger, D. G. (1998). \textit{Investment science}. Oxford University Press.
+
+\bibitem{litterman1991}
+Litterman, R., \& Scheinkman, J. (1991). Common factors affecting bond returns. \textit{Journal of Fixed Income}, 1(1), 54--61.
+
+\end{thebibliography}
+
+\subsection*{Eigenvalue and Eigenvector Plots}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{ytm_eigenvalues.png}
+\caption{YTM Eigenvalues}
+\label{fig:ytm_eigenvalues}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.65\textwidth]{ytm_eigenvectors.png}
+\caption{YTM Eigenvectors (First Three Principal Components)}
+\label{fig:ytm_eigenvectors}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{forward_eigenvalues.png}
+\caption{Forward Rates Eigenvalues}
+\label{fig:forward_eigenvalues}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.65\textwidth]{forward_eigenvectors.png}
+\caption{Forward Rates Eigenvectors (First Three Principal Components)}
+\label{fig:forward_eigenvectors}
+\end{figure}
+
+\end{document}
