@@ -1,5 +1,5 @@
 """
-计算即期曲线（Spot Curve）和远期曲线（Forward Curve）
+Calculate spot curves and forward curves
 """
 
 import json
@@ -15,7 +15,7 @@ plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 def parse_date(date_str):
-    """解析日期字符串"""
+    """Parse date string"""
     if not date_str:
         return None
     formats = ['%m/%d/%Y', '%Y-%m-%d', '%m-%d-%Y', '%Y/%m/%d']
@@ -28,7 +28,7 @@ def parse_date(date_str):
 
 def calculate_ytm(price, coupon_rate, face_value, valuation_date, maturity_date, 
                   coupon_frequency=2):
-    """计算到期收益率(YTM)"""
+    """Calculate Yield to Maturity (YTM)"""
     if not price or not coupon_rate or not maturity_date:
         return None
     
@@ -85,22 +85,22 @@ def calculate_ytm(price, coupon_rate, face_value, valuation_date, maturity_date,
 
 def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
     """
-    使用bootstrapping方法计算即期利率
+    Calculate spot rates using bootstrapping method
     
-    参数:
-    - bonds_data: 包含债券信息的列表，每个债券包含price, coupon, maturity_date等
-    - date_str: 估值日期
-    - reference_date_str: 参考日期（用于计算到期年限）
+    Args:
+        bonds_data: List of bond info (price, coupon, maturity_date, etc.)
+        date_str: Valuation date
+        reference_date_str: Reference date for calculating years to maturity
     
-    返回:
-    - spot_rates: 字典，键为到期年限（年），值为即期利率（百分比）
+    Returns:
+        spot_rates: Dict mapping years to maturity to spot rates (percentage)
     """
     valuation_date = parse_date(date_str)
     
     if not valuation_date:
         return {}
     
-    # 按到期年限排序
+    # Sort by maturity
     bonds_with_maturity = []
     for bond in bonds_data:
         maturity_date = parse_date(bond.get('maturity_date'))
@@ -138,24 +138,19 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
         except:
             continue
         
-        # 半年度付息
         periods_per_year = 2
         coupon_per_period = (coupon_float * face_value) / periods_per_year
         
-        # 简化：计算半年度付息期数
-        # 假设从估值日期开始，每0.5年付息一次，直到到期日
         num_periods = int(years * periods_per_year)
         if num_periods == 0:
             num_periods = 1
         
-        # 计算每个付息期到估值日的年数（0.5, 1.0, 1.5, ...）
         payment_years = []
         for period in range(1, num_periods + 1):
             period_years = period / periods_per_year
             if period_years <= years:
                 payment_years.append(period_years)
         
-        # 确保到期日在列表中
         if years not in payment_years:
             payment_years.append(years)
         
@@ -164,36 +159,26 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
         if len(payment_years) == 0:
             continue
         
-        # Bootstrapping方程
         def spot_equation(r):
-            """计算债券价格，使用已知和未知的即期利率"""
+            """Calculate bond price using known and unknown spot rates"""
             if r <= -1:
                 return float('inf')
             
             pv_total = 0
             
-            # 对于每个付息期
             for j, pay_years in enumerate(payment_years):
-                # 确定使用哪个即期利率
                 if pay_years < years:
-                    # 对于到期日之前的付息期，使用已知的spot rate（通过插值）
                     if pay_years in spot_rates:
-                        # 直接使用已知的spot rate
                         spot_r = spot_rates[pay_years] / 100.0
                     else:
-                        # 线性插值：找到最近的上下界
                         known_years = sorted(spot_rates.keys())
                         if len(known_years) == 0:
-                            # 如果没有已知的spot rate，使用当前r作为近似
                             spot_r = r
                         elif pay_years < known_years[0]:
-                            # 如果小于所有已知值，使用第一个已知值
                             spot_r = spot_rates[known_years[0]] / 100.0
                         elif pay_years > known_years[-1]:
-                            # 如果大于所有已知值，使用最后一个已知值
                             spot_r = spot_rates[known_years[-1]] / 100.0
                         else:
-                            # 线性插值
                             lower = None
                             upper = None
                             for y in known_years:
@@ -204,7 +189,6 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
                                     break
                             
                             if lower and upper:
-                                # 线性插值
                                 r_lower = spot_rates[lower] / 100.0
                                 r_upper = spot_rates[upper] / 100.0
                                 spot_r = r_lower + (r_upper - r_lower) * (pay_years - lower) / (upper - lower)
@@ -215,24 +199,18 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
                             else:
                                 spot_r = r
                 else:
-                    # 对于到期日（最后一期），使用未知的spot rate r
                     spot_r = r
                 
-                # 计算现值（半年度复利）
                 discount_factor = (1 + spot_r / 2) ** (2 * pay_years)
                 
                 if j < len(payment_years) - 1:
-                    # 付息期：只有票息
                     pv_total += coupon_per_period / discount_factor
                 else:
-                    # 最后一期：票息 + 本金
                     pv_total += (coupon_per_period + face_value) / discount_factor
             
             return pv_total - (price_float * face_value / 100.0)
         
-        # 求解即期利率
         try:
-            # 初始猜测：使用YTM作为近似
             ytm_approx = calculate_ytm(price_float, coupon_float * 100, face_value, 
                                        valuation_date, maturity_date, coupon_frequency=2)
             if ytm_approx:
@@ -240,7 +218,6 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
             else:
                 initial_guess = coupon_float
             
-            # 如果有之前的即期利率，使用它作为初始猜测
             if spot_rates:
                 prev_years = list(spot_rates.keys())[-1]
                 initial_guess = spot_rates[prev_years] / 100.0
@@ -249,27 +226,24 @@ def bootstrap_spot_rates(bonds_data, date_str, reference_date_str='2026-01-05'):
             
             spot_rate = fsolve(spot_equation, initial_guess, xtol=1e-8)[0] * 100
             
-            # 确保结果合理
             if 0 < spot_rate < 50:
                 spot_rates[years] = spot_rate
-        except Exception as e:
+        except Exception:
             continue
     
     return spot_rates
 
 def calculate_forward_rates(spot_rates):
     """
-    从即期利率计算1年期远期利率
+    Calculate 1-year forward rates from spot rates
     
-    参数:
-    - spot_rates: 字典，键为到期年限，值为即期利率（百分比）
+    Args:
+        spot_rates: Dict mapping years to maturity to spot rates (percentage)
     
-    返回:
-    - forward_rates: 字典，键为远期期限（如'1yr-1yr'），值为远期利率（百分比）
+    Returns:
+        forward_rates: Dict mapping forward terms (e.g., '1yr-1yr') to forward rates (percentage)
     """
     forward_rates = {}
-    
-    # 需要1年、2年、3年、4年、5年的即期利率
     spot_1yr = spot_rates.get(1.0) or spot_rates.get(min([k for k in spot_rates.keys() if k >= 0.9 and k <= 1.1], default=1.0))
     spot_2yr = spot_rates.get(2.0) or spot_rates.get(min([k for k in spot_rates.keys() if k >= 1.9 and k <= 2.1], default=2.0))
     spot_3yr = spot_rates.get(3.0) or spot_rates.get(min([k for k in spot_rates.keys() if k >= 2.9 and k <= 3.1], default=3.0))
@@ -277,13 +251,10 @@ def calculate_forward_rates(spot_rates):
     spot_5yr = spot_rates.get(5.0) or spot_rates.get(min([k for k in spot_rates.keys() if k >= 4.9 and k <= 5.1], default=5.0))
     
     if not all([spot_1yr, spot_2yr, spot_3yr, spot_4yr, spot_5yr]):
-        # 如果缺少某些即期利率，使用插值
         sorted_spots = sorted(spot_rates.items())
         if len(sorted_spots) >= 2:
-            # 线性插值
             for target_year in [1.0, 2.0, 3.0, 4.0, 5.0]:
                 if target_year not in spot_rates:
-                    # 找到最近的上下界
                     lower = None
                     upper = None
                     for y, r in sorted_spots:
@@ -291,10 +262,9 @@ def calculate_forward_rates(spot_rates):
                             lower = (y, r)
                         elif y > target_year and upper is None:
                             upper = (y, r)
-                            break
+                        break
                     
                     if lower and upper:
-                        # 线性插值
                         interp_rate = lower[1] + (upper[1] - lower[1]) * (target_year - lower[0]) / (upper[0] - lower[0])
                         spot_rates[target_year] = interp_rate
                     elif lower:
@@ -308,15 +278,11 @@ def calculate_forward_rates(spot_rates):
             spot_4yr = spot_rates.get(4.0, 0)
             spot_5yr = spot_rates.get(5.0, 0)
     
-    # 转换为小数
     s1 = spot_1yr / 100.0 if spot_1yr else 0
     s2 = spot_2yr / 100.0 if spot_2yr else 0
     s3 = spot_3yr / 100.0 if spot_3yr else 0
     s4 = spot_4yr / 100.0 if spot_4yr else 0
     s5 = spot_5yr / 100.0 if spot_5yr else 0
-    
-    # 计算1年期远期利率（半年度复利）
-    # F_{1,2} = 2 * [((1+S2/2)^4 / (1+S1/2)^2)^(1/2) - 1]
     
     if s1 > 0 and s2 > 0:
         f_1yr_1yr = 2 * (((1 + s2/2)**4 / (1 + s1/2)**2)**0.5 - 1) * 100
@@ -337,7 +303,7 @@ def calculate_forward_rates(spot_rates):
     return forward_rates
 
 def get_bond_price(bonds_data, isin, date, use_simulated=True):
-    """获取债券价格"""
+    """Get bond price"""
     for bond in bonds_data:
         if bond.get('isin') == isin:
             hist_prices = bond.get('historical_prices', {})
@@ -366,17 +332,17 @@ def get_bond_price(bonds_data, isin, date, use_simulated=True):
     return None
 
 def load_bonds_data(filename='bonds_data.json'):
-    """加载债券数据"""
+    """Load bond data"""
     with open(filename, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def load_selected_bonds(filename='selected_bonds.json'):
-    """加载选择的债券"""
+    """Load selected bonds"""
     with open(filename, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
-    """计算所有曲线：YTM、Spot、Forward"""
+    """Calculate all curves: YTM, Spot, Forward"""
     weekdays = []
     current_date = parse_date(start_date)
     end_dt = parse_date(end_date)
@@ -391,7 +357,6 @@ def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
     forward_results = []
     
     for date_str in weekdays:
-        # 准备当天的债券数据
         daily_bonds = []
         for bond_info in selected_bonds:
             isin = bond_info['ISIN']
@@ -413,7 +378,6 @@ def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
                         'years_to_maturity': bond_info['Years_to_Maturity']
                     })
         
-        # 计算YTM
         for bond in daily_bonds:
             ytm = calculate_ytm(
                 price=bond['price'],
@@ -430,7 +394,6 @@ def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
                     'YTM': ytm
                 })
         
-        # 计算即期利率
         spot_rates = bootstrap_spot_rates(daily_bonds, date_str)
         for years, rate in spot_rates.items():
             spot_results.append({
@@ -439,7 +402,6 @@ def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
                 'Spot_Rate': rate
             })
         
-        # 计算远期利率
         forward_rates = calculate_forward_rates(spot_rates)
         for fwd_term, rate in forward_rates.items():
             forward_results.append({
@@ -451,9 +413,9 @@ def calculate_all_curves(bonds_data, selected_bonds, start_date, end_date):
     return pd.DataFrame(ytm_results), pd.DataFrame(spot_results), pd.DataFrame(forward_results)
 
 def plot_spot_curves(spot_df, output_file='spot_curves.png'):
-    """绘制即期曲线"""
+    """Plot spot curves"""
     if spot_df.empty:
-        print("警告: 没有即期利率数据可绘制")
+        print("Warning: No spot rate data to plot")
         return
     
     dates = sorted(spot_df['Date'].unique())
@@ -496,18 +458,17 @@ def plot_spot_curves(spot_df, output_file='spot_curves.png'):
     
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"即期曲线图已保存到 {output_file}")
+    print(f"Spot curves saved to {output_file}")
     plt.close()
 
 def plot_forward_curves(forward_df, output_file='forward_curves.png'):
-    """绘制远期曲线"""
+    """Plot forward curves"""
     if forward_df.empty:
-        print("警告: 没有远期利率数据可绘制")
+        print("Warning: No forward rate data to plot")
         return
     
     dates = sorted(forward_df['Date'].unique())
     
-    # 远期期限顺序
     term_order = ['1yr-1yr', '1yr-2yr', '1yr-3yr', '1yr-4yr']
     
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -520,13 +481,11 @@ def plot_forward_curves(forward_df, output_file='forward_curves.png'):
     for i, date in enumerate(dates):
         date_data = forward_df[forward_df['Date'] == date]
         
-        # 按顺序提取远期利率
         x_values = []
         y_values = []
         for term in term_order:
             term_data = date_data[date_data['Forward_Term'] == term]
             if not term_data.empty:
-                # 使用期限的数值表示（1, 2, 3, 4年）
                 term_num = int(term.split('-')[1].replace('yr', ''))
                 x_values.append(term_num)
                 y_values.append(term_data['Forward_Rate'].iloc[0])
@@ -558,43 +517,42 @@ def plot_forward_curves(forward_df, output_file='forward_curves.png'):
     
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"远期曲线图已保存到 {output_file}")
+    print(f"Forward curves saved to {output_file}")
     plt.close()
 
 def main():
     print("=" * 60)
-    print("计算即期曲线和远期曲线")
+    print("Calculate Spot and Forward Curves")
     print("=" * 60)
     
     bonds_data = load_bonds_data()
     selected_bonds = load_selected_bonds()
     
-    print(f"\n加载了 {len(bonds_data)} 个债券")
-    print(f"选择了 {len(selected_bonds)} 个债券用于分析")
+    print(f"\nLoaded {len(bonds_data)} bonds")
+    print(f"Selected {len(selected_bonds)} bonds for analysis")
     
     start_date = '2026-01-05'
     end_date = '2026-01-19'
     
-    print(f"\n计算日期范围: {start_date} 到 {end_date}")
+    print(f"\nDate range: {start_date} to {end_date}")
     
     ytm_df, spot_df, forward_df = calculate_all_curves(bonds_data, selected_bonds, start_date, end_date)
     
-    # 保存结果
     if not ytm_df.empty:
         ytm_df.to_csv('ytm_data.csv', index=False, encoding='utf-8')
-        print(f"\nYTM数据: {len(ytm_df)} 个数据点")
+        print(f"\nYTM data: {len(ytm_df)} data points")
     
     if not spot_df.empty:
         spot_df.to_csv('spot_data.csv', index=False, encoding='utf-8')
-        print(f"即期利率数据: {len(spot_df)} 个数据点")
+        print(f"Spot rate data: {len(spot_df)} data points")
         plot_spot_curves(spot_df)
     
     if not forward_df.empty:
         forward_df.to_csv('forward_data.csv', index=False, encoding='utf-8')
-        print(f"远期利率数据: {len(forward_df)} 个数据点")
+        print(f"Forward rate data: {len(forward_df)} data points")
         plot_forward_curves(forward_df)
     
-    print("\n完成！")
+    print("\nCompleted!")
 
 if __name__ == "__main__":
     main()

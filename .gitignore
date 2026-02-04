@@ -1,13 +1,19 @@
-# 依赖
-node_modules/
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
 .Python
-env/
+
+# 虚拟环境
 venv/
+env/
 .venv/
+ENV/
+env.bak/
+venv.bak/
 
 # IDE
 .idea/
@@ -15,20 +21,36 @@ venv/
 *.swp
 *.swo
 *~
-
-# 操作系统
 .DS_Store
-Thumbs.db
 
-# 日志
+# LaTeX编译临时文件
+*.aux
 *.log
-logs/
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
 
-# 环境变量
-.env
-.env.local
+# 数据文件（原始/未处理版本）
+*_raw.json
+*_raw.csv
 
-# 构建输出
+# 测试/调试文件
+test_*.py
+*_test.py
+diagnose_*.py
+test_*.html
+
+# 临时文档
+FIX_*.md
+*_README.md
+QUICKSTART.md
+*_answers.md
+*_selection.md
+CLEANUP_*.md
+
+# 其他
+*.egg-info/
 dist/
 build/
-*.egg-info/
